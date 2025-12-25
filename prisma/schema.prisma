@@ -1,0 +1,269 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// AUTH MODELS
+// ============================================
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  password      String?
+  phone         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts      Account[]
+  sessions      Session[]
+  listings      Listing[]
+  savedListings SavedListing[]
+  inquiries     Inquiry[]
+  
+  @@index([email])
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ============================================
+// LISTING MODELS
+// ============================================
+
+model Listing {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  
+  // Basic Info
+  title       String
+  description String   @db.Text
+  price       Int
+  status      ListingStatus @default(ACTIVE)
+  
+  // Property Details
+  propertyType PropertyType
+  bedrooms    Int
+  bathrooms   Float
+  sqft        Int?
+  lotSize     Float?
+  yearBuilt   Int?
+  
+  // Location
+  address     String
+  unit        String?
+  city        String
+  state       String
+  zipCode     String
+  county      String?
+  latitude    Float?
+  longitude   Float?
+  
+  // Features
+  features    String[]
+  amenities   String[]
+  
+  // AI Generated Content
+  aiDescription   String?  @db.Text
+  aiHighlights    String[] 
+  aiNeighborhood  String?  @db.Text
+  
+  // SEO
+  metaTitle       String?
+  metaDescription String?
+  
+  // Stats
+  views       Int      @default(0)
+  saves       Int      @default(0)
+  
+  // Timestamps
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  publishedAt DateTime?
+  expiresAt   DateTime?
+  
+  // Relations
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  images      ListingImage[]
+  inquiries   Inquiry[]
+  savedBy     SavedListing[]
+  
+  @@index([userId])
+  @@index([status])
+  @@index([city, state])
+  @@index([price])
+  @@index([propertyType])
+  @@index([slug])
+}
+
+model ListingImage {
+  id        String   @id @default(cuid())
+  url       String
+  publicId  String?  // For cloud storage reference
+  alt       String?
+  order     Int      @default(0)
+  isPrimary Boolean  @default(false)
+  
+  // AI enhancements
+  aiEnhanced    Boolean @default(false)
+  aiStagedUrl   String?
+  
+  listingId String
+  listing   Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now())
+  
+  @@index([listingId])
+}
+
+model SavedListing {
+  id        String   @id @default(cuid())
+  userId    String
+  listingId String
+  createdAt DateTime @default(now())
+  
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  listing Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, listingId])
+  @@index([userId])
+  @@index([listingId])
+}
+
+model Inquiry {
+  id        String      @id @default(cuid())
+  message   String      @db.Text
+  status    InquiryStatus @default(PENDING)
+  
+  userId    String?
+  user      User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+  
+  // For non-authenticated inquiries
+  name      String?
+  email     String?
+  phone     String?
+  
+  listingId String
+  listing   Listing     @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  
+  @@index([listingId])
+  @@index([userId])
+}
+
+// ============================================
+// NEIGHBORHOOD/SEO MODELS
+// ============================================
+
+model Neighborhood {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  name        String
+  city        String
+  state       String
+  zipCodes    String[]
+  
+  // AI Generated Content
+  description     String?  @db.Text
+  highlights      String[]
+  walkScore       Int?
+  transitScore    Int?
+  bikeScore       Int?
+  crimeRating     String?
+  schoolRating    String?
+  
+  // Market Data
+  medianPrice     Int?
+  avgPricePerSqft Int?
+  daysOnMarket    Int?
+  listingsCount   Int     @default(0)
+  
+  // SEO
+  metaTitle       String?
+  metaDescription String?
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@unique([name, city, state])
+  @@index([city, state])
+  @@index([slug])
+}
+
+// ============================================
+// ENUMS
+// ============================================
+
+enum ListingStatus {
+  DRAFT
+  ACTIVE
+  PENDING
+  SOLD
+  EXPIRED
+  CANCELLED
+}
+
+enum PropertyType {
+  SINGLE_FAMILY
+  CONDO
+  TOWNHOUSE
+  MULTI_FAMILY
+  LAND
+  MANUFACTURED
+  OTHER
+}
+
+enum InquiryStatus {
+  PENDING
+  READ
+  REPLIED
+  ARCHIVED
+}
