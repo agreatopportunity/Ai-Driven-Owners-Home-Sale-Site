@@ -291,8 +291,8 @@ MIT License - feel free to use commercially.
 ## 🆘 Support
 
 - Issues: GitHub Issues
-- Email: support@homebase.ai
-- Docs: [docs.homebase.ai](https://docs.homebase.ai)
+- Email: 
+- Docs: 
 
 ---
 
