@@ -175,6 +175,119 @@ CLOUDINARY_API_KEY="..."
 CLOUDINARY_API_SECRET="..."
 ```
 
+# SETUP FINAL 
+## Step 1: Create the Database
+
+```bash
+# Switch to postgres user and create database
+sudo -u postgres psql -c "CREATE DATABASE homebase;"
+
+# Create a password for the postgres user (if not set)
+sudo -u postgres psql -c "ALTER USER postgres PASSWORD 'yourpassword';"
+```
+
+---
+
+## Step 2: Configure Environment
+
+```bash
+# Copy the example env file
+cp .env.example .env
+
+# Edit it
+nano .env
+```
+
+Update these values in `.env`:
+```env
+# Database - use the password you just set
+DATABASE_URL="postgresql://postgres:yourpassword@localhost:5432/homebase"
+
+# Auth - generate a secret
+NEXTAUTH_SECRET="run-this-command-below-to-generate"
+NEXTAUTH_URL="http://localhost:3000"
+
+# AI - use your OpenAI key OR local LLM
+AI_API_KEY="sk-your-openai-key"
+AI_BASE_URL="https://api.openai.com/v1"
+AI_MODEL="gpt-4o-mini"
+
+# OR for local LLM (LM Studio/Ollama):
+# AI_API_KEY="not-needed"
+# AI_BASE_URL="http://localhost:1234/v1"
+# AI_MODEL="your-model-name"
+```
+
+**Generate NEXTAUTH_SECRET:**
+```bash
+openssl rand -base64 32
+```
+Copy that output into your `.env` file.
+
+Save and exit nano: `Ctrl+X`, then `Y`, then `Enter`
+
+---
+
+## Step 3: Install Dependencies
+
+```bash
+npm install
+```
+
+---
+
+## Step 4: Setup Database Schema
+
+```bash
+npx prisma db push
+```
+
+---
+
+## Step 5: Seed Sample Data (Optional but Recommended)
+
+```bash
+npm run db:seed
+```
+
+This creates demo listings and a test user:
+- Email: `demo@homebase.ai`
+- Password: `demo123456`
+
+---
+
+## Step 6: Launch!
+
+```bash
+npm run dev
+```
+
+You should see:
+```
+▲ Next.js 14.2.5
+- Local:        http://localhost:3000
+- Ready in 2.3s
+```
+
+**Open your browser to:** http://localhost:3000
+
+---
+
+## Quick Commands Summary
+
+```bash
+# Run these in order:
+sudo -u postgres psql -c "CREATE DATABASE homebase;"
+sudo -u postgres psql -c "ALTER USER postgres PASSWORD 'yourpassword';"
+cp .env.example .env
+nano .env                    # Edit with your values
+npm install
+npx prisma db push
+npm run db:seed              # Optional: adds demo data
+npm run dev                  # Start the app!
+```
+
+
 ---
 
 ## 📁 Project Structure
